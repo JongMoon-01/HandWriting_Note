@@ -2,7 +2,7 @@
 
 논문·문서를 웹에서 보면서 하이라이트, 볼드, 텍스트 색상 변경, 메모 등 인터랙티브한 주석(annotation)을 달 수 있는 서비스.
 
-설계 배경 및 전체 아키텍처 결정 사항은 [`docs/design.md`](docs/design.md) 참고.
+설계 배경 및 전체 아키텍처 결정 사항은 [`docs/design.md`](docs/design.md), 기술 스택 버전 명세는 [`docs/versions.md`](docs/versions.md), 초기 셋업 재현 과정은 [`docs/setup-log.md`](docs/setup-log.md) 참고.
 
 ## 기술 스택
 
@@ -34,10 +34,35 @@
 
 ## 로컬 개발
 
-1. `docker-compose up` (Postgres, Kafka, MinIO 등 로컬 의존성 — 추후 추가 예정)
-2. `backend/` — 각 모듈 유닛 테스트 후 로컬 실행
-3. `worker/` — Go 워커 로컬 실행
-4. `frontend/` — React 개발 서버 실행
+### 사전 준비 (한 번만)
+```bash
+cd backend
+gradle wrapper --gradle-version 9.5.1   # gradle이 로컬에 없으면 IntelliJ로 backend/ 열어서 자동 생성해도 됨
+```
+
+### backend (Java, Gradle 멀티모듈: app/document/annotation/user/export)
+```bash
+docker compose up -d postgres   # 로컬 Postgres (Flyway가 부팅 시 자동으로 마이그레이션 적용)
+cd backend
+./gradlew test    # 모듈별 유닛 테스트
+./gradlew :app:bootRun
+```
+
+### worker (Go)
+```bash
+cd worker
+go get github.com/segmentio/kafka-go@latest && go mod tidy   # 최초 1회
+go run ./cmd/worker
+```
+
+### frontend (React + Vite)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Postgres는 `docker-compose.yml`로 로컬 구동 가능 (루트에서 `docker compose up -d postgres`). Kafka/MinIO는 해당 모듈(Annotation/Export, Document) 작업 시 추가 예정.
 
 ## 배포
 
